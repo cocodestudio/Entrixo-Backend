@@ -115,6 +115,8 @@ public function getDailyReport(Request $request)
                     'device_name' => $att->device_name ?? 'N/A', 
                     'device_id'   => $att->device_id ?? 'N/A',
                     'ip_address'  => $att->ip_address ?? 'N/A',
+                    'lab_no'      => $att->lab_no ?? 'N/A',
+                    'pc_no'       => $att->pc_no ?? 'N/A',
                 ] : null
             ];
         }
@@ -138,7 +140,9 @@ public function getDailyReport(Request $request)
 }
 
    public function saveManualAttendance(Request $request)
-{
+    
+   {
+    
     $request->validate([
         'subject_id' => 'required',
         'session_id' => 'required',
@@ -152,32 +156,45 @@ public function getDailyReport(Request $request)
         $uniqueSuffix = str_replace('-', '', $dateKey);
         $now = now();
 
+        $existingAttendance = DB::table('attendances')
+            ->where('subject_id', $request->subject_id)
+            ->where('date_key', $dateKey)
+            ->get()
+            ->keyBy('user_id'); 
+
         foreach ($request->attendance_data as $studentId => $status) {
             $uniqueKey = "ATT_{$studentId}_{$request->subject_id}_{$uniqueSuffix}";
+        
+            $existing = $existingAttendance->get($studentId);
+
+            if ($existing && $existing->method === 'QR_SCAN' && $status === 'Present') {
+                continue; 
+            }
 
             DB::table('attendances')->updateOrInsert(
-                [
-                    'unique_session_key' => $uniqueKey,
-                ],
+                ['unique_session_key' => $uniqueKey],
                 [
                     'user_id' => $studentId,
                     'subject_id' => $request->subject_id,
                     'session_id' => $request->session_id,
                     'date_key' => $dateKey,
                     'status' => $status,
-                    'device_id' => 'ADMIN_PANEL',
-                    'method' => 'ADMIN_MANUAL',
+                    'device_id' => $existing ? $existing->device_id : 'ADMIN_PANEL',
+                    'device_name' => $existing ? $existing->device_name : 'Manual Entry',
+                    'method' => $existing ? $existing->method : 'ADMIN_MANUAL',
+                    
                     'updated_at' => $now,
-                    'created_at' => DB::raw('IFNULL(created_at, NOW())') 
+                    'created_at' => $existing ? $existing->created_at : $now 
                 ]
             );
         }
 
         DB::commit();
-        return response()->json(['status' => 'success', 'message' => 'Attendance Synced Successfully'], 200);
+        return response()->json(['status' => 'success', 'message' => 'Attendance Synced Safely'], 200);
     } catch (\Exception $e) {
         DB::rollBack();
         return response()->json(['message' => 'Error: ' . $e->getMessage()], 500);
     }
-}
+    
+    }
 }

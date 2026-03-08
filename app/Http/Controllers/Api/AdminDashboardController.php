@@ -33,7 +33,6 @@ class AdminDashboardController extends Controller
             $activeLabsList = [];
 
             if ($activeSession) {
-                // Maine users table se join hata diya hai kyunki subjects mein teacher_id nahi hai
                 $subjects = DB::table('subjects')
                     ->leftJoin('courses', 'subjects.course_id', '=', 'courses.id')
                     ->select('subjects.*', 'courses.name as course_name') 
@@ -58,8 +57,7 @@ class AdminDashboardController extends Controller
                                         'courseName' => $subject->course_name ?? 'N/A',
                                         'semester' => $subject->semester,
                                         'time' => $start->format('h:i A') . ' - ' . $end->format('h:i A'),
-                                        // Faculty name table mein nahi hai, toh static bhej raha hoon crash se bachne ke liye
-                                        'faculty_name' => 'Admin' 
+                                        'faculty_name' => $subject->faculty_name ?? 'N/A',
                                     ];
                                 }
                             }

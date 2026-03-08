@@ -12,7 +12,6 @@ class AttendanceController extends Controller {
     public function markAttendance(Request $request) {
         $user = $request->user();
 
-        // 1. Solid Validation
         $request->validate([
             'qr_data' => 'required|string',
             'latitude' => 'required|numeric',
@@ -24,6 +23,8 @@ class AttendanceController extends Controller {
         try {
             $qrData = json_decode($request->qr_data, true);
             $targetLabId = $qrData['l'] ?? null;
+            $labNo = $qrData['l'] ?? 'N/A';
+            $pcNo = $qrData['p'] ?? 'N/A';
             if (!$targetLabId) return response()->json(['message' => 'Invalid QR!'], 400);
 
             $activeSession = DB::table('academic_sessions')->where('status', 'Active')->first();
@@ -32,7 +33,6 @@ class AttendanceController extends Controller {
             $now = Carbon::now();
             $todayStr = $now->toDateString();
 
-            // 2. Fraud Check
             $fraud = DB::table('attendances')
                 ->where('date_key', $todayStr)
                 ->where('device_id', $request->device_id)
@@ -41,7 +41,16 @@ class AttendanceController extends Controller {
 
             if ($fraud) return response()->json(['message' => 'Fraud: Device already used!'], 403);
 
-            // 3. Simple Subject Finder
+            if (empty($user->device_id)) {
+                $user->update(['device_id' => $request->device_id]);
+            } else {
+                if ($user->device_id !== $request->device_id) {
+                    return response()->json([
+                        'message' => 'Device mismatch. This account is bound to another phone. Contact Admin to reset.'
+                    ], 403);
+                }
+            }
+
             $subjects = DB::table('subjects')
                 ->where('course_id', $user->course_id)
                 ->where('semester', $user->current_semester)
@@ -60,14 +69,12 @@ class AttendanceController extends Controller {
 
             if (!$currentSubId) return response()->json(['message' => 'No lab scheduled for today!'], 400);
 
-            // 4. Distance Check
             $lab = DB::table('labs')->where('id', $targetLabId)->first();
             if ($lab) {
                 $dist = $this->calculateDistance($request->latitude, $request->longitude, $lab->latitude, $lab->longitude);
                 if ($dist > 100.0) return response()->json(['message' => 'Out of range!'], 400);
             }
 
-            // 5. Final Insert
             $uniqueKey = "ATT_{$user->id}_{$currentSubId}_" . $now->format('Ymd');
             
             DB::table('attendances')->updateOrInsert(
@@ -79,6 +86,8 @@ class AttendanceController extends Controller {
                     'ip_address' => $request->ip(),
                     'session_id' => $activeSession->id,
                     'subject_id' => $currentSubId,
+                    'lab_no' => $labNo, 
+                    'pc_no' => $pcNo,
                     'date_key' => $todayStr,
                     'status' => 'Present',
                     'latitude' => $request->latitude,

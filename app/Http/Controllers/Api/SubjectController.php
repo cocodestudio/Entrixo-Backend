@@ -34,6 +34,7 @@ class SubjectController extends Controller {
         $data = $request->validate([
             'name' => 'required|string',
             'code' => 'required|string',
+            'faculty_name' => 'nullable|string',
             'course_id' => 'required|exists:courses,id',
             'semester' => 'required|integer',
             'session_id' => 'required|exists:academic_sessions,id',
@@ -56,6 +57,7 @@ class SubjectController extends Controller {
         $subject = Subject::create([
             'name' => $data['name'],
             'code' => strtoupper($data['code']), 
+            'faculty_name' => $data['faculty_name'],
             'course_id' => $data['course_id'],
             'semester' => $data['semester'],
             'session_id' => $data['session_id'],

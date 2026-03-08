@@ -39,4 +39,8 @@ class User extends Authenticatable {
             'is_manual_entry' => 'boolean',
         ];
     }
+
+    public function course() {
+        return $this->belongsTo(Course::class, 'course_id');
+    }
 }

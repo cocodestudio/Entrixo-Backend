@@ -35,6 +35,34 @@ class SessionController extends Controller {
         return response()->json(['status' => 'success', 'data' => $session], 201);
     }
 
+    public function update(Request $request, $id) {
+        $session = AcademicSession::find($id);
+        
+        if (!$session) {
+            return response()->json(['status' => 'error', 'message' => 'Session not found'], 404);
+        }
+
+        $request->validate([
+            'session_name' => 'required|string|unique:academic_sessions,session_name,' . $id,
+            'academic_year' => 'required|string',
+            'start_date' => 'required|date',
+            'end_date' => 'required|date|after:start_date',
+            'course_id' => 'required|string',
+            'course_name' => 'required|string',
+            'target_semester' => 'required|string',
+            'description' => 'required|string',
+            'status' => 'required|in:Active,Inactive'
+        ]);
+
+        if ($request->status === 'Active') {
+            AcademicSession::where('id', '!=', $id)->update(['status' => 'Inactive']);
+        }
+
+        $session->update($request->all());
+
+        return response()->json(['status' => 'success', 'data' => $session], 200);
+    }
+
     public function destroy($id) {
         $session = AcademicSession::find($id);
         if (!$session) {

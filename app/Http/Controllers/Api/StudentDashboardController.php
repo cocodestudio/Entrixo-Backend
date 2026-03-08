@@ -68,6 +68,7 @@ class StudentDashboardController extends Controller
                                 $upcomingSessions[] = [
                                     'subject' => $subject->name,
                                     'code' => $subject->code,
+                                    'faculty_name' => $subject->faculty_name ?? 'N/A',
                                     'time' => $sessionStart->format('h:i A') . ' - ' . $sessionEnd->format('h:i A'),
                                     'room' => $item['room'] ?? 'Lab',
                                     'dt_sort' => $sessionStart->timestamp,

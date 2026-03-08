@@ -85,18 +85,20 @@ class AuthController extends Controller {
         $user->refresh();
 
         return response()->json([
-            'status' => 'success',
-            'message' => 'Profile updated successfully',
-            'user' => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'email' => $user->email,
-                'profile_pic' => $user->profile_pic,
-                'role' => $user->role,
-                'phone_number' => $user->phone_number,
-                'roll_number' => $user->roll_number,
-            ]
-        ], 200);
+    'status' => 'success',
+    'message' => 'Profile updated successfully',
+    'user' => [
+        'id' => $user->id,
+        'name' => $user->name,
+        'email' => $user->email,
+        'profile_pic' => $user->profile_pic,
+        'role' => $user->role,
+        'phone_number' => $user->phone_number,
+        'roll_number' => $user->roll_number,
+        'course_name' => $user->course ? $user->course->course_name : 'N/A',
+        'current_semester' => $user->current_semester,
+    ]
+], 200);
     }
 
     public function logout(Request $request) {
@@ -229,23 +231,26 @@ class AuthController extends Controller {
     }
 
     public function me(Request $request) {
-        $user = $request->user();
-        
-        if (!$user) {
-            return response()->json(['message' => 'User not found'], 401);
-        }
+    $user = $request->user();
 
-        return response()->json([
-            'status' => 'success',
-            'user' => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'email' => $user->email,
-                'profile_pic' => $user->profile_pic,
-                'phone_number' => $user->phone_number,
-                'role' => $user->role,
-                'roll_number' => $user->roll_number,
-            ]
-        ], 200);
+    if ($user->role === 'student') {
+        $user->load('course');
+    }
+    
+    return response()->json([
+        'status' => 'success',
+        'user' => [
+            'id' => $user->id,
+            'name' => $user->name,
+            'email' => $user->email,
+            'profile_pic' => $user->profile_pic,
+            'phone_number' => $user->phone_number,
+            'role' => $user->role,
+            'roll_number' => $user->roll_number,
+            'course_name' => ($user->course) ? $user->course->name : 'N/A', 
+            'current_semester' => $user->current_semester ?? 'N/A',
+        ]
+    ], 200);
+    
     }
 }

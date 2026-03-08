@@ -12,6 +12,7 @@ return new class extends Migration {
             $table->foreignId('session_id')->constrained('academic_sessions')->onDelete('cascade');
             $table->string('name'); 
             $table->string('code'); 
+            $table->string('faculty_name')->nullable();
             $table->integer('semester');
             $table->json('schedule');
             $table->timestamps();

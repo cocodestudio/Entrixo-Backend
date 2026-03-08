@@ -8,7 +8,7 @@ use App\Http\Controllers\Api\SubjectController;
 use App\Http\Controllers\Api\StudentAttendanceController;
 use App\Http\Controllers\Api\DailyHeadcountController;
 
-Route::post('/login', [AuthController::class, 'login']);
+Route::post('/login', [AuthController::class, 'login'])->name('login');
 
 Route::post('/forgot-password/send-otp', [\App\Http\Controllers\Api\ForgotPasswordController::class, 'sendOtp']);
 Route::post('/forgot-password/verify-otp', [\App\Http\Controllers\Api\ForgotPasswordController::class, 'verifyOtp']);
@@ -69,4 +69,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/notifications/clear', [\App\Http\Controllers\Api\NotificationController::class, 'clearAll']);
     Route::post('/fcm-token', [\App\Http\Controllers\Api\NotificationController::class, 'saveToken']);
     Route::get('/admin/attendance/daily-report', [\App\Http\Controllers\Api\AdminAttendanceController::class, 'getDailyReport']);
+    Route::post('/students/promote', [\App\Http\Controllers\Api\StudentController::class, 'promoteStudents']);
+    Route::post('/students/reset-device', [\App\Http\Controllers\Api\StudentController::class, 'resetDevice']);
 });

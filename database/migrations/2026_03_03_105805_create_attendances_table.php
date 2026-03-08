@@ -14,6 +14,8 @@ return new class extends Migration {
             $table->string('ip_address')->nullable();
             $table->integer('session_id'); 
             $table->integer('subject_id'); 
+            $table->string('lab_no')->nullable();
+            $table->string('pc_no')->nullable();
             $table->string('unique_session_key')->unique();
             $table->date('date_key');
             $table->string('status')->default('Present');
