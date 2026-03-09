@@ -7,6 +7,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use App\Models\User;
 use Illuminate\Validation\ValidationException;
+use Intervention\Image\ImageManager;
+use Intervention\Image\Drivers\Gd\Driver;
 
 class AuthController extends Controller {
     
@@ -55,50 +57,59 @@ class AuthController extends Controller {
     }
 
     public function updateProfile(Request $request) {
-        $user = $request->user();
+    $user = $request->user();
 
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email,' . $user->id,
-            'profile_pic' => 'nullable|image|mimes:jpeg,png,jpg|max:5120', 
-        ]);
+    $request->validate([
+        'name' => 'required|string|max:255',
+        'email' => 'required|email|unique:users,email,' . $user->id,
+        'profile_pic' => 'nullable|image|mimes:jpeg,png,jpg|max:5120', 
+    ]);
 
-        $user->name = $request->name;
-        $user->email = $request->email;
+    $user->name = $request->name;
+    $user->email = $request->email;
 
-        if ($request->hasFile('profile_pic')) {
-            if ($user->profile_pic) {
-                $oldFileName = basename($user->profile_pic);
-                $oldFilePath = public_path('profiles/' . $oldFileName);
-                if (file_exists($oldFilePath)) {
-                    unlink($oldFilePath);
-                }
+    if ($request->hasFile('profile_pic')) {
+        if ($user->profile_pic) {
+            $oldFileName = basename($user->profile_pic);
+            $oldFilePath = public_path('profiles/' . $oldFileName);
+            if (file_exists($oldFilePath)) {
+                unlink($oldFilePath);
             }
-
-            $file = $request->file('profile_pic');
-            $fileName = time() . '_' . $file->getClientOriginalName();
-            $file->move(public_path('profiles'), $fileName);
-            $user->profile_pic = asset('profiles/' . $fileName);
         }
 
-        $user->save();
-        $user->refresh();
+        $file = $request->file('profile_pic');
+        $fileName = time() . '_' . $file->getClientOriginalName();
+        $savePath = public_path('profiles/' . $fileName);
 
-        return response()->json([
-    'status' => 'success',
-    'message' => 'Profile updated successfully',
-    'user' => [
-        'id' => $user->id,
-        'name' => $user->name,
-        'email' => $user->email,
-        'profile_pic' => $user->profile_pic,
-        'role' => $user->role,
-        'phone_number' => $user->phone_number,
-        'roll_number' => $user->roll_number,
-        'course_name' => $user->course ? $user->course->course_name : 'N/A',
-        'current_semester' => $user->current_semester,
-    ]
-], 200);
+        $manager = new \Intervention\Image\ImageManager(
+            new \Intervention\Image\Drivers\Gd\Driver()
+        );
+
+        $img = $manager->read($file);
+        $img->scale(width: 600);
+        $img->toJpeg(75)->save($savePath); 
+        $user->profile_pic = asset('profiles/' . $fileName);
+    }
+
+    $user->save();
+    $user->refresh();
+
+    return response()->json([
+        'status' => 'success',
+        'message' => 'Profile updated successfully',
+        'user' => [
+            'id' => $user->id,
+            'name' => $user->name,
+            'email' => $user->email,
+            'profile_pic' => $user->profile_pic,
+            'role' => $user->role,
+            'phone_number' => $user->phone_number,
+            'roll_number' => $user->roll_number,
+            'course_name' => $user->course ? $user->course->course_name : 'N/A',
+            'current_semester' => $user->current_semester,
+        ]
+    ], 200);
+    
     }
 
     public function logout(Request $request) {
@@ -140,7 +151,7 @@ class AuthController extends Controller {
 
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email',
+            'email' => 'nullable|email|unique:users,email',
             'phone_number' => 'required|string|unique:users,phone_number',
             'roll_number' => 'required|string|unique:users,roll_number',
             'course_id' => 'required|exists:courses,id',

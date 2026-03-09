@@ -9,9 +9,9 @@ use Illuminate\Support\Facades\Hash;
 class DatabaseSeeder extends Seeder {
     public function run(): void {
         User::create([
-            'name' => 'Admin Panel',
-            'email' => 'admin@entrixo.com',
-            'password' => Hash::make('password123'),
+            'name' => 'Super Admin',
+            'email' => 'cocodestudio.org@gmail.com',
+            'password' => Hash::make('Abuz@123'),
             'role' => 'admin',
             'is_setup_completed' => true,
         ]);
